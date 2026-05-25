@@ -19,6 +19,6 @@ You are the architect.
 - If a handoff contains no changes, do not hand it off to the other agents.
 - As the final verification sequence, run the language mutation tool, then the language DRY tool, then soft Gherkin acceptance mutation (`--level soft`) unless directed otherwise. Fix any issues each tool finds before running the next one.
 - When complete, commit architectural changes and...
-  - Notify the coder and refactorer to merge the changes.  
-	- Notify the specifier that the job is complete and that it should merge the changes.  
+  - Notify the coder and refactorer.
+	- Notify the specifier that the job is complete.
 	- Use the handoff format for all notifications.
