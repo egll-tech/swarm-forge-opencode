@@ -59,7 +59,7 @@ SwarmForge runs locally. Before starting a runnable branch, make sure the target
 - `git`
 - `tmux`
 - Babashka (`bb`)
-- At least one configured agent backend, such as `codex`, `claude`, `copilot`, or `grok`
+- At least one configured agent backend, such as `opencode`, `claude`, `codex`, `copilot`, or `grok`
 
 ## Getting Started
 
@@ -80,6 +80,8 @@ After copying a runnable branch, start the swarm from the target project:
 
 The `./swarm` wrapper keeps the runnable branch small. On first use, if `swarmforge/scripts/` is missing, it downloads the `main` branch archive, copies the shared operational scripts from `swarmforge/scripts/`, stages shared constitution articles from `swarmforge/constitution/articles/`, and then launches `swarmforge/scripts/swarmforge.sh`. Later runs reuse the existing local scripts directory instead of overwriting it.
 
+Existing runnable branch checkouts may already have stale copied scripts. After upgrading, if `opencode` is not accepted as a backend, remove the ignored `swarmforge/scripts/` directory once and run `./swarm` again so the wrapper downloads the updated shared scripts.
+
 The windows should open automatically.
 
 To stop the swarm, close the first window listed in `swarmforge/swarmforge.conf`. That cleanup window shuts down the tmux sessions and closes the remaining tracked windows.
@@ -93,7 +95,7 @@ SwarmForge is a lightweight, tmux-based orchestration layer that:
 - Launches a **config-driven swarm** from a project-local `swarmforge/swarmforge.conf`
 - Creates one tmux session per configured role and opens a terminal surface for each role when the selected backend supports it
 - Reads behavior from project-local `swarmforge/roles/<role>.prompt` files plus a layered `swarmforge/constitution.prompt`
-- Supports per-role backends such as `claude`, `codex`, `copilot`, or `grok`
+- Supports per-role backends such as `opencode`, `claude`, `codex`, `copilot`, or `grok`
 - Puts the shared `swarmforge/scripts/` directory on each agent's `PATH`, including handoff helpers for active swarm communication
 - Creates git worktrees under `.worktrees/` for roles assigned to dedicated worktree names
 - Initializes a git repository in a new working directory when needed
@@ -104,7 +106,7 @@ SwarmForge is a lightweight, tmux-based orchestration layer that:
 - **Config-Driven Topology** — The swarm shape comes from `swarmforge/swarmforge.conf`, not hardcoded shell variables.
 - **Project-Local Roles** — Each role is defined by `swarmforge/roles/<role>.prompt` in the working tree being orchestrated.
 - **Layered Constitution** — `swarmforge/constitution.prompt` directs agents to read article files under `swarmforge/constitution/articles/`.
-- **Backend Selection Per Role** — A role can launch `claude`, `codex`, `copilot`, or `grok`.
+- **Backend Selection Per Role** — A role can launch `opencode`, `claude`, `codex`, `copilot`, or `grok`.
 - **Observable Swarm** — Open one Terminal window per role and watch the sessions in real time.
 - **Self-Hosted & Lightweight** — Runs locally in tmux and Terminal with minimal machinery.
 
@@ -214,11 +216,13 @@ window <role> <agent> <worktree> [task|batch] [extra-cli-args...]
 
 The optional receive mode defaults to `task`. Use `batch` for roles that should consume all currently queued equal-priority handoffs as one batch.
 
-Any fields after the receive mode are passed directly to the agent CLI as additional arguments. If you omit the receive mode, extra arguments may start at the fifth field:
+Supported agents are `opencode`, `claude`, `codex`, `copilot`, and `grok`. The examples below use `opencode`; the other backends remain supported alternatives.
+
+Any fields after the receive mode are passed directly to the selected agent CLI as additional arguments. These flags are backend-specific and are not portable across all backends. If you configure optional OpenCode-specific flags and omit the receive mode, extra arguments may start at the fifth field:
 
 ```conf
-window coder copilot wt-coder --yolo
-window architect claude wt-arch task --dangerously-skip-permissions
+window coder opencode wt-coder --model anthropic/claude-sonnet-4-20250514
+window reviewer opencode reviewer batch --agent reviewer --mini
 ```
 
 You can define as many windows as your project needs. Each `role` maps to a corresponding prompt file at `swarmforge/roles/<role>.prompt`, so a config containing `architect`, `coder`, `reviewer`, `research`, and `release` windows would expect:
@@ -234,10 +238,10 @@ This lets each project choose its own swarm shape instead of being locked to a f
 Example config:
 
 ```conf
-window coordinator codex master
-window coder codex coder
-window refactorer codex refactorer
-window architect codex architect
+window coordinator opencode master
+window coder opencode coder
+window refactorer opencode refactorer
+window architect opencode architect
 ```
 
 In the example above, the agents run in these worktrees:

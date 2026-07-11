@@ -111,6 +111,21 @@
       (finally
         (fs/delete-tree root)))))
 
+(deftest swarmforge-launcher-parses-opencode-config
+  (let [root (tmp-dir)]
+    (try
+      (write-file (fs/path root "swarmforge/constitution.prompt")
+                  "Read articles.\n")
+      (write-file (fs/path root "swarmforge/swarmforge.conf")
+                  "window coder opencode master\n")
+      (write-file (fs/path root "swarmforge/roles/coder.prompt") "coder\n")
+      (let [result (run {:dir root} (script "swarmforge.bb") "--test-parse" (str root))]
+        (is (str/includes? (:out result) "coder Coder"))
+        (is (str/includes? (:out result) "coder\tmaster\t"))
+        (is (str/includes? (:out result) "\tCoder\topencode\ttask")))
+      (finally
+        (fs/delete-tree root)))))
+
 (deftest swarmforge-uses-portable-tmux-socket-dir
   (let [root (tmp-dir)]
     (try
@@ -216,6 +231,30 @@
             command (:out result)]
         (is (str/includes? command "copilot -C "))
         (is (re-find #"--name 'SwarmForge Coder' --yolo -i" command)))
+      (finally
+        (fs/delete-tree root)))))
+
+(deftest opencode-launch-command-passes-initial-prompt-and-extra-cli-args
+  (let [root (tmp-dir)]
+    (try
+      (let [extra-args "--model anthropic/claude-sonnet-4-20250514 --agent reviewer --mini --auto"
+            result (run {:dir root}
+                        (script "swarmforge.bb")
+                        "--test-launch-command"
+                        (str root)
+                        "opencode"
+                        extra-args)
+            command (:out result)
+            prompt-path (str (fs/path root ".swarmforge/prompts/coder.md"))]
+        (is (str/includes? command (str "opencode '" root "' ")))
+        (is (str/includes? command "--prompt \"$(cat "))
+        (is (str/includes? command prompt-path))
+        (is (str/includes? command "--model anthropic/claude-sonnet-4-20250514"))
+        (is (str/includes? command "--agent reviewer"))
+        (is (str/includes? command "--mini"))
+        (is (str/includes? command "--auto"))
+        (is (not (str/includes? command "opencode run")))
+        (is (fs/exists? (fs/path root ".swarmforge/prompts/coder.md"))))
       (finally
         (fs/delete-tree root)))))
 
